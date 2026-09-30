@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'ankitabodhankar90@gmail.com';
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserRole() == 'admin');
+    }
+
+    function isOfficer() {
+      return isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserRole() == 'officer');
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isOfficer();
+      allow list: if isOfficer();
+      
+      allow create: if isOwner(userId) && (
+        (isSuperAdmin() && request.resource.data.role == 'admin') ||
+        (!isSuperAdmin() && request.resource.data.role == 'citizen') ||
+        isAdmin()
+      );
+      
+      allow update: if (
+        (isOwner(userId) && request.resource.data.role == resource.data.role) ||
+        isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /issues/{issueId} {
+      allow get: if isOfficer() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow list: if isOfficer() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isOfficer() && (
+        request.resource.data.ownerId == resource.data.ownerId &&
+        request.resource.data.priorityScore == resource.data.priorityScore &&
+        request.resource.data.category == resource.data.category
+      );
+
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid && resource.data.status == 'Open');
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isOfficer();
+      allow create: if isOfficer() && request.resource.data.actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

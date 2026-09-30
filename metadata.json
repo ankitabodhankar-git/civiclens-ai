@@ -1,0 +1,6 @@
+{
+  "name": "CivicLens AI",
+  "description": "AI-powered civic issue intelligence and prioritization platform transforming citizen reports into structured governance insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
