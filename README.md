@@ -9,6 +9,16 @@
 
 ---
 
+### LIVE DEMO
+
+**CivicLens AI — Working Prototype**
+
+Explore the deployed prototype and experience the complete citizen-to-governance workflow.
+
+🔗 **Open Live Demo**
+https://civiclens-ai-1.ai.studio/
+---
+
 ## 1. Project Overview & Problem Statement
 
 ### The Problem
